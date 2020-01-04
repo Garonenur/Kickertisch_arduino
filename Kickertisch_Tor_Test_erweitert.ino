@@ -16,10 +16,10 @@
  * Pin Konfiguration
  */
 // Pin des NeoPixel
-const int NEO_PIN =  6;
+const int NEO_PIN =  10;
 // Bewegungsmelder
-const int TOR1_SENSOR = 7;
-const int TOR2_SENSOR = 8;
+const int TOR1_SENSOR = 11;
+const int TOR2_SENSOR = 12;
 
 /**
  * Konfiguration
@@ -95,10 +95,19 @@ void setzeAlleGruen()
   setzeAlle(green);
 }
 
-void blink(uint32_t color) { for (int j = 0; j < 20; j++) { setzeAlle(color);
-  pixels->show(); delay(BLINKDELAY);
-  //setzeAlle(black);
-  pixels->clear(); pixels->show(); delay(BLINKDELAY); } }
+void blink(uint32_t color)
+{
+  for (int j = 0; j < 20; j++)
+  {
+    setzeAlle(color);
+    pixels->show();
+    delay(BLINKDELAY);
+    //setzeAlle(black);
+    pixels->clear();
+    pixels->show();
+    delay(BLINKDELAY);
+  }
+}
 
 void blinkGruen()
 {
@@ -143,7 +152,8 @@ void runcolor(uint32_t color)
         setzeXPixel(colorstart, length, color);
         setzeXPixel(basestart, length, BASECOLOR);
       }
-      pixels->show(); delay(DELAYVAL);
+      pixels->show();
+      delay(DELAYVAL);
     }
   }
 }
@@ -162,7 +172,10 @@ void torReaktion(int moving, uint32_t color)
   triggered = moving == HIGH;
 }
 
-void loop() {
+int program = 0;
+
+void torCheck()
+{
   int tor1TOR = 0;
   int tor2TOR = 0;
   setzeAlle(BASECOLOR);
@@ -171,4 +184,55 @@ void loop() {
   tor2TOR = digitalRead(TOR2_SENSOR);
   torReaktion(tor1TOR, red);
   torReaktion(tor2TOR, blue);
+}
+
+void count()
+{
+  setzeAlle(black);
+  for (int i = 10; i <= numPixField; i+=10)
+  {
+    pixels->setPixelColor(i-5,blue);
+    pixels->setPixelColor(i,red);
+  }
+  delay(1000);
+  pixels->show();
+}
+
+const int ECKE1=11;
+const int ECKE2=82;
+const int TOR1=98;
+const int TORLENGTH=12;
+const int ECKE3=126;
+const int ECKE4=196;
+const int TOR2=212;
+
+void mark()
+{
+  setzeXPixel(0,ECKE1,blue);
+  setzeXPixel(ECKE1,ECKE2-ECKE1,yellow);
+  setzeXPixel(ECKE2,TOR1-ECKE2,red);
+  setzeXPixel(TOR1,TORLENGTH,violet);
+  setzeXPixel(TOR1+TORLENGTH,ECKE3-TOR1+TORLENGTH,red);
+  setzeXPixel(ECKE3,ECKE4-ECKE3,yellow);
+  setzeXPixel(ECKE4,TOR2-ECKE4,blue);
+  setzeXPixel(TOR2,TORLENGTH,violet);
+  setzeXPixel(TOR2+TORLENGTH,numPixField-TOR2+TORLENGTH,blue);
+  pixels->show();
+}
+
+void loop()
+{
+  switch (program) {
+    case 0:
+      torCheck();
+      break;
+    case 1:
+      count();
+      break;
+    case 2:
+      mark();
+      break;
+    default:
+      break;
+  }
 }
