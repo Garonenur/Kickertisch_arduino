@@ -72,11 +72,11 @@ uint32_t cyan = Adafruit_NeoPixel::Color(0,255,255);
 
 // Feldabmessungen :)
 const int ECKE1=12;
-const int ECKE2=82;
+const int ECKE2=82; //70 LEDs
 const int TOR1=98;
 const int TORLENGTH=12;
 const int ECKE3=126;
-const int ECKE4=196;
+const int ECKE4=196; //70 LEDS
 const int TOR2=212;
 
 
@@ -141,6 +141,7 @@ void setzeTorseite2(uint32_t color)
   setzeXPixel(0,ECKE1,color);
   setzeXPixel(ECKE4,numPixField-ECKE4,color);
 }
+
 void blink(uint32_t color)
 {
   for (int j = 0; j < 20; j++)
@@ -155,6 +156,29 @@ void blink(uint32_t color)
   }
 }
 
+void blinkXPixel(int start, int length, uint32_t color)
+{
+  for (int j = 0; j < 20; j++)
+  {
+    setzeXPixel(start,length,color);
+    pixels->show();
+    delay(BLINKDELAY);
+    setzeXPixel(start,length,black);
+    pixels->show();
+    delay(BLINKDELAY);
+  }
+}
+
+void blinkTor1()
+{
+  blinkXPixel(TOR1,TORLENGTH,red);
+}
+
+void blinkTor2()
+{
+  blinkXPixel(TOR2,TORLENGTH,blue);
+}
+
 void blinkGruen()
 {
   blink(green);
@@ -165,10 +189,27 @@ void blinkRot()
   blink(red);
 }
 
+void setzeFeldFarbe()
+{
+  setzeAlle(BASECOLOR);
+  setzeTorseite1(blue);
+  setzeTorseite2(red);
+}
+
+void runColorXPixel(int start, int length, uint32_t color, int segments)
+{
+  int segLength = length / segments;
+  int twoLength = segLength * 2;
+  setzeFeldFarbe();
+  for (int i = 0; i < segments/2; i++) {
+    setzeXPixel(start + i*twoLength, segLength,color);
+  }
+}
+
 void runcolor(uint32_t color)
 {
   const int length = 20;
-  const int twoLength = length<<1;
+  const int twoLength = length * 2;
   // repeat to make segments run more than once
   for(int k = 0; k < (numPixField/twoLength); k++)
   {
@@ -206,7 +247,7 @@ void runcolor(uint32_t color)
 
 bool triggered=false;
 
-void torReaktion(int moving, uint32_t color)
+void torReaktion(int moving, uint32_t color, int tor)
 {
   //Bewegung erfassen Verarbeitung: Wenn eine Bewegung detektiert wird (Das
   //Spannungssignal ist hoch)
@@ -214,7 +255,19 @@ void torReaktion(int moving, uint32_t color)
   if (moving == HIGH && !triggered)
   {
     Serial.println("TOOOOOOOR");
+    switch (tor) {
+      case 1:
+        blinkTor1();
+        break;
+      case 2:
+        blinkTor2();
+        break;
+
+      default:
+        break;
+    }
     runcolor(color);
+    
   }
   triggered = moving == HIGH;
 }
@@ -227,14 +280,12 @@ void torCheck()
 {
   int tor1TOR = 0;
   int tor2TOR = 0;
-  setzeAlle(BASECOLOR);
-  setzeTorseite1(blue);
-  setzeTorseite2(red);
+  setzeFeldFarbe();
   pixels->show();
   tor1TOR = digitalRead(TOR1_SENSOR);
   tor2TOR = digitalRead(TOR2_SENSOR);
-  torReaktion(tor1TOR, red);
-  torReaktion(tor2TOR, blue);
+  torReaktion(tor1TOR, red, 1);
+  torReaktion(tor2TOR, blue, 2);
 }
 
 void count()
@@ -288,6 +339,9 @@ void loop()
       break;
     case '2':
       mark();
+      break;
+    case '3':
+      runColorXPixel(ECKE1,ECKE2-ECKE1,red,10);
       break;
     default:
       blinkRot();
